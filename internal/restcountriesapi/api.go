@@ -2,6 +2,7 @@ package restcountriesapi
 
 import (
 	"encoding/json"
+	"github.com/linqcod/countries-telegram-bot/internal/apierrors"
 	"github.com/linqcod/countries-telegram-bot/internal/model"
 	"github.com/spf13/viper"
 	"io"
@@ -34,6 +35,12 @@ func (a *CountriesApi) GetCountryByName(name string) (*model.Country, error) {
 
 	res := make([]*model.Country, 1)
 	if err = json.Unmarshal(content, &res); err != nil {
+		apiError := apierrors.RestCountriesApiError{}
+		err = json.Unmarshal(content, &apiError)
+		if err == nil && apiError.Message == "Not Found" {
+			return nil, apierrors.ErrorCountryNotFound
+		}
+
 		return nil, err
 	}
 
