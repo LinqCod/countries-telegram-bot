@@ -7,10 +7,10 @@ import (
 
 func LoadConfig() {
 	viper.SetConfigName("app")
-	viper.SetConfigType("yml")
-	viper.AddConfigPath("./configs")
+	viper.SetConfigType("env")
+	viper.AddConfigPath(".")
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal("config apierrors: ", err.Error())
+		log.Fatal("config error: ", err.Error())
 	}
 }

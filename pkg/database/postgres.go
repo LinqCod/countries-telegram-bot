@@ -3,23 +3,24 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 	"log"
 )
 
 func InitDB() (*sql.DB, error) {
-	host := viper.GetString("postgres.host")
-	port := viper.GetString("postgres.port")
-	username := viper.GetString("postgres.username")
-	password := viper.GetString("postgres.password")
-	dbname := viper.GetString("postgres.dbname")
+	host := viper.GetString("HOST")
+	port := viper.GetString("PORT")
+	username := viper.GetString("USERNAME")
+	password := viper.GetString("PASSWORD")
+	dbname := viper.GetString("DBNAME")
 
-	pgInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=false",
-		host, port, username, password, dbname)
+	pgInfo := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable",
+		username, password, host, port, dbname)
 
 	db, err := sql.Open("postgres", pgInfo)
 	if err != nil {
-		return nil, fmt.Errorf("validation of db parameters failed due to apierrors: %v", err)
+		return nil, fmt.Errorf("validation of db parameters failed due to error: %v", err)
 	}
 
 	if err = db.Ping(); err != nil {

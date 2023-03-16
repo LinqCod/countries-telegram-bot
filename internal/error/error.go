@@ -1,8 +1,8 @@
-package apierrors
+package error
 
 import "errors"
 
-var ErrorCountryNotFound = errors.New("country not found")
+var CountryNotFound = errors.New("country not found")
 
 type RestCountriesApiError struct {
 	Status  int    `json:"status"`

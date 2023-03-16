@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/linqcod/countries-telegram-bot/internal/apierrors"
+	apierror "github.com/linqcod/countries-telegram-bot/internal/error"
 	"github.com/linqcod/countries-telegram-bot/internal/model"
-	"github.com/linqcod/countries-telegram-bot/internal/restcountriesapi"
+	"github.com/linqcod/countries-telegram-bot/internal/service"
 	"github.com/spf13/viper"
 	"log"
 	"strings"
@@ -15,12 +15,11 @@ import (
 type CountriesBot struct {
 	bot          *tgbotapi.BotAPI
 	updateConfig tgbotapi.UpdateConfig
-	countriesApi *restcountriesapi.CountriesApi
-	//db           *sql.DB
+	service      *service.RestCountriesService
 }
 
-func NewCountriesBot(countriesApi *restcountriesapi.CountriesApi) (*CountriesBot, error) {
-	token := viper.GetString("telegram-bot.token")
+func NewCountriesBot(service *service.RestCountriesService) (*CountriesBot, error) {
+	token := viper.GetString("TOKEN")
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
@@ -29,8 +28,8 @@ func NewCountriesBot(countriesApi *restcountriesapi.CountriesApi) (*CountriesBot
 	//bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	offset := viper.GetInt("telegram-bot.update-offset")
-	timeout := viper.GetInt("telegram-bot.update-timeout")
+	offset := viper.GetInt("UPDATE_OFFSET")
+	timeout := viper.GetInt("UPDATE_TIMEOUT")
 	u := tgbotapi.UpdateConfig{
 		Offset:  offset,
 		Timeout: timeout,
@@ -39,8 +38,7 @@ func NewCountriesBot(countriesApi *restcountriesapi.CountriesApi) (*CountriesBot
 	return &CountriesBot{
 		bot:          bot,
 		updateConfig: u,
-		countriesApi: countriesApi,
-		//db:           db,
+		service:      service,
 	}, nil
 }
 
@@ -67,10 +65,10 @@ func (b *CountriesBot) Start() {
 				break
 			}
 			name := update.Message.CommandArguments()
-			country, err := b.countriesApi.GetCountryByName(name)
+			country, err := b.service.GetCountryByName(name)
 
 			if err != nil {
-				if errors.Is(err, apierrors.ErrorCountryNotFound) {
+				if errors.Is(err, apierror.CountryNotFound) {
 					msg.Text = err.Error()
 					break
 				}

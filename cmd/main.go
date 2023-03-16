@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/linqcod/countries-telegram-bot/internal/restcountriesapi"
+	"github.com/linqcod/countries-telegram-bot/internal/repository"
+	"github.com/linqcod/countries-telegram-bot/internal/service"
 	"github.com/linqcod/countries-telegram-bot/internal/telegrambot"
 	"github.com/linqcod/countries-telegram-bot/pkg/config"
+	"github.com/linqcod/countries-telegram-bot/pkg/database"
 	"log"
 )
 
@@ -12,15 +14,17 @@ func init() {
 }
 
 func main() {
-	//db, err := database.InitDB()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//defer db.Close()
+	db, err := database.InitDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
-	countriesApi := restcountriesapi.NewCountriesApi()
+	repo := repository.NewCountriesRepository(db)
 
-	bot, err := telegrambot.NewCountriesBot(countriesApi)
+	s := service.NewRestCountriesService(repo)
+
+	bot, err := telegrambot.NewCountriesBot(s)
 	if err != nil {
 		log.Fatal(err)
 	}
