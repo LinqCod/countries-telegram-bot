@@ -1,5 +1,11 @@
 package model
 
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+)
+
 type Country struct {
 	Name struct {
 		Common   string `json:"common"`
@@ -21,4 +27,17 @@ type Country struct {
 	Population int64   `json:"population"`
 	//TimeZones
 	Continents []string `json:"continents"`
+}
+
+func (c Country) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (c *Country) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+
+	return json.Unmarshal(b, &c)
 }

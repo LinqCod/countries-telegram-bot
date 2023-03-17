@@ -66,17 +66,17 @@ func (b *CountriesBot) Start() {
 			}
 			name := update.Message.CommandArguments()
 			country, err := b.service.GetCountryByName(name)
-
 			if err != nil {
 				if errors.Is(err, apierror.CountryNotFound) {
 					msg.Text = err.Error()
 					break
 				}
+				log.Fatal(err)
 			}
 			msg.ParseMode = tgbotapi.ModeHTML
 
+			log.Println(country.Name)
 			msg.Text = createCountryInfoHtml(country)
-
 		default:
 			msg.Text = "I dont know this command"
 		}

@@ -47,7 +47,9 @@ func (a *RestCountriesService) GetCountryByName(name string) (*model.Country, er
 		return nil, err
 	}
 
-	//TODO: repository.SaveCountry
+	if err = a.repository.SaveCountry(res[0]); err != nil {
+		return nil, err
+	}
 
 	return res[0], nil
 }
