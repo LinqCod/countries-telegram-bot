@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/linqcod/countries-telegram-bot/internal/repository"
-	"github.com/linqcod/countries-telegram-bot/internal/service"
+	countriesRepository "github.com/linqcod/countries-telegram-bot/internal/countries/repository"
+	countriesService "github.com/linqcod/countries-telegram-bot/internal/countries/service"
 	"github.com/linqcod/countries-telegram-bot/internal/telegrambot"
+	statsRepository "github.com/linqcod/countries-telegram-bot/internal/userstatistics/repository"
+	statsService "github.com/linqcod/countries-telegram-bot/internal/userstatistics/service"
 	"github.com/linqcod/countries-telegram-bot/pkg/config"
 	"github.com/linqcod/countries-telegram-bot/pkg/database"
 	"log"
@@ -20,11 +22,13 @@ func main() {
 	}
 	defer db.Close()
 
-	repo := repository.NewCountriesRepository(db)
+	countriesRepo := countriesRepository.NewRepository(db)
+	statsRepo := statsRepository.NewRepository(db)
 
-	s := service.NewRestCountriesService(repo)
+	countriesServ := countriesService.NewRestCountriesService(countriesRepo)
+	statsServ := statsService.NewService(statsRepo)
 
-	bot, err := telegrambot.NewCountriesBot(s)
+	bot, err := telegrambot.NewCountriesBot(countriesServ, statsServ)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,24 +1,27 @@
 package telegrambot
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	apierror "github.com/linqcod/countries-telegram-bot/internal/error"
-	"github.com/linqcod/countries-telegram-bot/internal/model"
-	"github.com/linqcod/countries-telegram-bot/internal/service"
+	countriesModel "github.com/linqcod/countries-telegram-bot/internal/countries/model"
+	countriesService "github.com/linqcod/countries-telegram-bot/internal/countries/service"
+	apierror "github.com/linqcod/countries-telegram-bot/internal/errors"
+	statsService "github.com/linqcod/countries-telegram-bot/internal/userstatistics/service"
 	"github.com/spf13/viper"
 	"log"
 	"strings"
 )
 
 type CountriesBot struct {
-	bot          *tgbotapi.BotAPI
-	updateConfig tgbotapi.UpdateConfig
-	service      *service.RestCountriesService
+	bot           *tgbotapi.BotAPI
+	updateConfig  tgbotapi.UpdateConfig
+	countriesServ *countriesService.Service
+	statsServ     *statsService.Service
 }
 
-func NewCountriesBot(service *service.RestCountriesService) (*CountriesBot, error) {
+func NewCountriesBot(countriesServ *countriesService.Service, statsServ *statsService.Service) (*CountriesBot, error) {
 	token := viper.GetString("TOKEN")
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
@@ -36,9 +39,10 @@ func NewCountriesBot(service *service.RestCountriesService) (*CountriesBot, erro
 	}
 
 	return &CountriesBot{
-		bot:          bot,
-		updateConfig: u,
-		service:      service,
+		bot:           bot,
+		updateConfig:  u,
+		countriesServ: countriesServ,
+		statsServ:     statsServ,
 	}, nil
 }
 
@@ -65,7 +69,7 @@ func (b *CountriesBot) Start() {
 				break
 			}
 			name := update.Message.CommandArguments()
-			country, err := b.service.GetCountryByName(name)
+			country, err := b.countriesServ.GetCountryByName(name)
 			if err != nil {
 				if errors.Is(err, apierror.CountryNotFound) {
 					msg.Text = err.Error()
@@ -75,8 +79,31 @@ func (b *CountriesBot) Start() {
 			}
 			msg.ParseMode = tgbotapi.ModeHTML
 
-			log.Println(country.Name)
 			msg.Text = createCountryInfoHtml(country)
+		case "get_account_statistics":
+			stats, err := b.statsServ.GetStatistics()
+			if err != nil {
+				if err == sql.ErrNoRows {
+					msg.Text = "No countries added yet"
+					break
+				}
+				log.Fatal(err)
+			}
+
+			msg.ParseMode = tgbotapi.ModeHTML
+
+			var sb strings.Builder
+			sb.WriteString("<b>Account Statistics:</b>\n\n")
+			sb.WriteString(fmt.Sprintf("The greatest country by area: <i>%s (%s)</i>\n",
+				stats.GreatestCountryByArea.Official,
+				stats.GreatestCountryByArea.Common,
+			))
+			sb.WriteString(fmt.Sprintf("The greatest country by population: <i>%s (%s)</i>\n",
+				stats.GreatestCountryByPopulation.Official,
+				stats.GreatestCountryByPopulation.Common,
+			))
+			sb.WriteString(fmt.Sprintf("The most frequent region: <i>%s</i>\n", stats.MostFrequentCountryRegion))
+			msg.Text = sb.String()
 		default:
 			msg.Text = "I dont know this command"
 		}
@@ -87,7 +114,7 @@ func (b *CountriesBot) Start() {
 	}
 }
 
-func createCountryInfoHtml(country *model.Country) string {
+func createCountryInfoHtml(country *countriesModel.Country) string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("<b>%s</b>\n", strings.ToUpper(country.Name.Official)))
 	sb.WriteString(fmt.Sprintf("<i>%s</i>\n\n", country.Name.Common))

@@ -11,6 +11,6 @@ func LoadConfig() {
 	viper.AddConfigPath(".")
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal("config error: ", err.Error())
+		log.Fatal("config errors: ", err.Error())
 	}
 }

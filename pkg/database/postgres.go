@@ -20,7 +20,7 @@ func InitDB() (*sql.DB, error) {
 
 	db, err := sql.Open("postgres", pgInfo)
 	if err != nil {
-		return nil, fmt.Errorf("validation of db parameters failed due to error: %v", err)
+		return nil, fmt.Errorf("validation of db parameters failed due to errors: %v", err)
 	}
 
 	if err = db.Ping(); err != nil {

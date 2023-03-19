@@ -2,29 +2,29 @@ package service
 
 import (
 	"encoding/json"
-	apierror "github.com/linqcod/countries-telegram-bot/internal/error"
-	"github.com/linqcod/countries-telegram-bot/internal/model"
-	"github.com/linqcod/countries-telegram-bot/internal/repository"
+	"github.com/linqcod/countries-telegram-bot/internal/countries/model"
+	"github.com/linqcod/countries-telegram-bot/internal/countries/repository"
+	apierror "github.com/linqcod/countries-telegram-bot/internal/errors"
 	"github.com/spf13/viper"
 	"io"
 	"net/http"
 )
 
-type RestCountriesService struct {
+type Service struct {
 	baseUrl    string
-	repository *repository.CountriesRepository
+	repository *repository.Repository
 }
 
-func NewRestCountriesService(repository *repository.CountriesRepository) *RestCountriesService {
+func NewRestCountriesService(repository *repository.Repository) *Service {
 	baseUrl := viper.GetString("BASE_URL")
 
-	return &RestCountriesService{
+	return &Service{
 		baseUrl:    baseUrl,
 		repository: repository,
 	}
 }
 
-func (a *RestCountriesService) GetCountryByName(name string) (*model.Country, error) {
+func (a *Service) GetCountryByName(name string) (*model.Country, error) {
 	response, err := http.Get(a.baseUrl + "name/" + name)
 	if err != nil {
 		return nil, err
